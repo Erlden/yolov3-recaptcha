@@ -6,6 +6,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 
 import PIL
 import cv2
@@ -21,7 +22,7 @@ def hover(element):
     hov.perform()
 
 
-driver = webdriver.Chrome()
+driver = webdriver.Chrome(ChromeDriverManager().install())
 driver.get("https://www.google.com/recaptcha/api2/demo")
 
 # Credit: https://stackoverflow.com/questions/32249190/improve-recaptcha-2-0-solving-automation-script-selenium/32415298
@@ -44,15 +45,22 @@ sleep(rand)
 clickReturn = CheckBox.click()
 print('\n\r after click on CheckBox... \n\r CheckBox click result: ', clickReturn)
 
-driver.switch_to.parent_frame()
-recaptchaFrame = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'iframe')))
-frameName = recaptchaFrame[1].get_attribute('name')
+driver.switch_to.default_content()
+captcha_content_iframe = driver.find_element_by_css_selector(
+            'iframe[title="reCAPTCHA 验证将于 2 分钟后过期"]')
+
+driver.switch_to.frame(captcha_content_iframe)
+
+WebElement = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, '.rc-imageselect-desc-wrapper strong')))
+search_name = WebElement[0].text
 
 rand = uniform(1, 3)
 print('\n\r explicit wait for ', rand, 'seconds...')
 sleep(rand)
 
-pngimg = recaptchaFrame[1].screenshot_as_png
+img = WebDriverWait(driver,10).until(EC.presence_of_element_located((By.CSS_SELECTOR,'#rc-imageselect-target > table > tbody > tr:nth-child(3) > td:nth-child(2) > div > div.rc-image-tile-wrapper > img')))
+
+pngimg = img.screenshot_as_png
 f = open('file.png', 'wb')
 f.write(pngimg)
 f.close()
@@ -91,4 +99,4 @@ image = utils.draw_bbox(original_image, bboxes)
 image = Image.fromarray(image)
 image.show()
 
-driver.close()
+# driver.close()
